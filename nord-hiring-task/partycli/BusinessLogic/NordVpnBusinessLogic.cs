@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
 using NordVPNModels.Models;
+using partycli.Helpers;
 using partycli.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace partycli.BusinnessLogic
@@ -18,7 +18,7 @@ namespace partycli.BusinnessLogic
             _apiService = apiService; 
         }
 
-        public async Task GetServers()
+        public async Task HandleCommandAsync(string[] args)
         {
             var currentState = States.none;
             string name = null;
@@ -31,7 +31,7 @@ namespace partycli.BusinnessLogic
                     if (arg == "server_list")
                     {
                         currentState = States.server_list;
-                        if (argIndex >= args.Count())
+                        if (argIndex >= args.Length)
                         {
                             var serverList = await _apiService.GetAllServersListAsync();
                             StoreValue("serverlist", serverList, false);
@@ -52,8 +52,8 @@ namespace partycli.BusinnessLogic
                     }
                     else
                     {
-                        StoreValue(ProccessName(name), arg);
-                        Log("Changed " + ProccessName(name) + " to " + arg);
+                        StoreValue(NordVpnHelper.ProccessName(name), arg);
+                        Log("Changed " + NordVpnHelper.ProccessName(name) + " to " + arg);
                         name = null;
                     }
                 }
@@ -123,12 +123,6 @@ namespace partycli.BusinnessLogic
                 Console.WriteLine("Error: Couldn't save " + name + ". Check if command was input correctly.");
             }
 
-        }
-
-        static string ProccessName(string name)
-        {
-            name = name.Replace("-", string.Empty);
-            return name;
         }
 
         static void DisplayList(string serverListString)

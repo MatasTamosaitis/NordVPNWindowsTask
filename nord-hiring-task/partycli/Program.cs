@@ -21,7 +21,7 @@ namespace partycli
 
             try
             { 
-                app.RunAsync().GetAwaiter().GetResult();
+                app.HandleCommandAsync(args).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
