@@ -1,9 +1,6 @@
-﻿using Newtonsoft.Json;
-using NordVPNModels.Models;
-using partycli.Interfaces;
+﻿using partycli.Interfaces;
 using System.Net.Http;
 using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 
 namespace partycli.Services
 {
