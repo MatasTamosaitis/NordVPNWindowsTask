@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NordHiringTask.PartyCLI.Models.Models
+namespace NordVPNModels.Models
 {
     public class LogModel
     {

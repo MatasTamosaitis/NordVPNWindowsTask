@@ -3,17 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using NordHiringTask.PartyCLI.Models.Models;
-using NordHiringTask.PartyCLI.Models.Enums;
+using NordVPNModels.Models;
 
-namespace NordHiringTask.PartyCLI
+namespace partycli
 {
     class Program
     {
-        private static readonly HttpClient client = new HttpClient();
-
         static void Main(string[] args)
         {
+            var serviceProvider = ConfigureServices();
+
             var currentState = States.none;
             string name = null;
             int argIndex = 1;
@@ -118,30 +117,6 @@ namespace NordHiringTask.PartyCLI
         {
             name = name.Replace("-", string.Empty);
             return name;
-        }
-
-        static string getAllServersListAsync()
-        {
-                var request = new HttpRequestMessage(HttpMethod.Get, "https://api.nordvpn.com/v1/servers");
-                var response = client.SendAsync(request).Result;
-                var responseString = response.Content.ReadAsStringAsync().Result;
-                return responseString;
-        }
-
-        static string getAllServerByCountryListAsync(int countryId)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.nordvpn.com/v1/servers?filters[servers_technologies][id]=35&filters[country_id]=" + countryId);
-            var response = client.SendAsync(request).Result;
-            var responseString = response.Content.ReadAsStringAsync().Result;
-            return responseString;
-        }
-
-        static string getAllServerByProtocolListAsync(int vpnProtocol)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.nordvpn.com/v1/servers?filters[servers_technologies][id]=" + vpnProtocol);
-            var response = client.SendAsync(request).Result;
-            var responseString = response.Content.ReadAsStringAsync().Result;
-            return responseString;
         }
 
         static void displayList(string serverListString)

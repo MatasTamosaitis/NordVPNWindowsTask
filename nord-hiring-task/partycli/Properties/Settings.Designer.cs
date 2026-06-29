@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace NordHiringTask.PartyCLI.Properties {
+namespace partycli.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

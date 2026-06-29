@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NordHiringTask.PartyCLI.Models.Models
+﻿
+namespace NordVPNModels.Models
 {
     public class VpnServerQuery
     {
