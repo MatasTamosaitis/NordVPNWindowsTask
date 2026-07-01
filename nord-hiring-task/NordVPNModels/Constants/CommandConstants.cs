@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace NordVPNModels.Constants
 {
-    public class CommandConstants
+    public static class CommandConstants
     {
-        public const string SERVER_LIST_COMMAND = "server_list";
-        public const string LOCAL_OPTIONS = "--local";
-        public const string FRANCE_OPTIONS = "--france";
+        public const string SERVER_LIST = "server_list";
+        public const string LOCAL_OPTION = "--local";
+        public const string CONFIG = "config";
+        public const string COUNTRY_OPTION = "--country";
+        public const string NETWORK_PROTOCOL_OPTION = "--protocol";
     }
 }

@@ -1,161 +1,181 @@
-﻿using Newtonsoft.Json;
-using NordVPNModels.Models;
-using partycli.Helpers;
-using partycli.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using NordVPNModels.Constants;
+using NordVPNModels.Models;
+using partycli.Helpers;
+using partycli.Interfaces;
 
-namespace partycli.BusinnessLogic
+namespace partycli.BusinessLogic
 {
     public class NordVpnBusinessLogic
     {
-        private readonly INordApiService _apiService; 
+        private readonly INordApiService _apiService;
+        private readonly INetworkProtocolService _networkProtocolService;
+        private readonly ICountryService _countryService;
+        private readonly INordDataStoreService _nordDataStoreService;
 
-        public NordVpnBusinessLogic(INordApiService apiService)
-        {  
-            _apiService = apiService; 
+        public NordVpnBusinessLogic(INordApiService apiService, INetworkProtocolService networkProtocolService, ICountryService countryService, INordDataStoreService nordDataStoreService)
+        {
+            _apiService = apiService;
+            _networkProtocolService = networkProtocolService;
+            _countryService = countryService;
+            _nordDataStoreService = nordDataStoreService;
         }
 
         public async Task HandleCommandAsync(string[] args)
         {
-            var currentState = States.none;
-            string name = null;
-            int argIndex = 1;
-
-            foreach (string arg in args)
+            if (args == null || args.Length == 0)
             {
-                if (currentState == States.none)
-                {
-                    if (arg == "server_list")
-                    {
-                        currentState = States.server_list;
-                        if (argIndex >= args.Length)
-                        {
-                            var serverList = await _apiService.GetAllServersListAsync();
-                            StoreValue("serverlist", serverList, false);
-                            Log("Saved new server list: " + serverList);
-                            DisplayList(serverList);
-                        }
-                    }
-                    if (arg == "config")
-                    {
-                        currentState = States.config;
-                    }
-                }
-                else if (currentState == States.config)
-                {
-                    if (name == null)
-                    {
-                        name = arg;
-                    }
-                    else
-                    {
-                        StoreValue(NordVpnHelper.ProccessName(name), arg);
-                        Log("Changed " + NordVpnHelper.ProccessName(name) + " to " + arg);
-                        name = null;
-                    }
-                }
-                else if (currentState == States.server_list)
-                {
-                    if (arg == "--local")
-                    {
-                        if (!String.IsNullOrEmpty(Properties.Settings.Default.serverlist))
-                        {
-                            DisplayList(Properties.Settings.Default.serverlist);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Error: There are no server data in local storage");
-                        }
-                    }
-                    else if (arg == "--france")
-                    {
-                        //france == 74
-                        //albania == 2
-                        //Argentina == 10
-                        var query = new VpnServerQuery(null, 74, null, null, null, null);
-                        var serverList = await _apiService.GetAllServerByCountryListAsync(query.CountryId.Value); //France id == 74
-                        StoreValue("serverlist", serverList, false);
-                        Log("Saved new server list: " + serverList);
-                        DisplayList(serverList);
-                    }
-                    else if (arg == "--TCP")
-                    {
-                        //UDP = 3
-                        //Tcp = 5
-                        //Nordlynx = 35
-                        var query = new VpnServerQuery(5, null, null, null, null, null);
-                        var serverList = await _apiService.GetAllServerByProtocolListAsync((int)query.Protocol.Value);
-                        StoreValue("serverlist", serverList, false);
-                        Log("Saved new server list: " + serverList);
-                        DisplayList(serverList);
-                    }
-                }
-                argIndex = argIndex + 1;
+                ProcessNameAndDisplayHelper.ToolTipDisplay();
+                return;
             }
 
-            if (currentState == States.none)
+            string command = args[0].ToLowerInvariant();
+
+            switch (command)
             {
-                Console.WriteLine("To get and save all servers, use command: partycli.exe server_list");
-                Console.WriteLine("To get and save France servers, use command: partycli.exe server_list --france");
-                Console.WriteLine("To get and save servers that support TCP protocol, use command: partycli.exe server_list --TCP");
-                Console.WriteLine("To see saved list of servers, use command: partycli.exe server_list --local ");
+                case CommandConstants.SERVER_LIST:
+                    await HandleServerListCommandAsync(args.Skip(1).ToArray());
+                    break;
+
+                case CommandConstants.CONFIG:
+                    HandleConfigCommand(args.Skip(1).ToArray());
+                    break;
+
+                default:
+                    ProcessNameAndDisplayHelper.ToolTipDisplay();
+                    break;
             }
+
             Console.Read();
         }
 
-        static void StoreValue(string name, string value, bool writeToConsole = true)
+        private async Task HandleServerListCommandAsync(string[] subArgs)
+        {
+            // if no sub command selected then get all servers
+            if (subArgs.Length == 0)
+            {
+                var serverList = await _apiService.GetAllServersListAsync();
+                ProcessAndSaveServerList(serverList);
+                return;
+            }
+
+            string command = subArgs[0].ToLowerInvariant();
+
+            switch (command)
+            {
+                case CommandConstants.LOCAL_OPTION:
+                    string localList = Properties.Settings.Default.serverlist;
+                    if (!string.IsNullOrEmpty(localList))
+                    {
+                        DisplayList(localList);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error: There are no server data in local storage");
+                    }
+                    break;
+                //if command contains a country try to retrieve servers by country.
+                case CommandConstants.COUNTRY_OPTION:
+                    if (subArgs.Length > 1)
+                    {
+                        string countryInput = subArgs[1]; 
+
+                        int countryId = _countryService.GetCountryIdByName(countryInput);
+
+                        if (countryId != -1) 
+                        {
+                            var countryList = await _apiService.GetAllServerByCountryListAsync(countryId);
+                            ProcessAndSaveServerList(countryList);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Error: Country '{countryInput}' is not supported.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error: Please specify a valid country. e.g. --country albania");
+                    }
+                    break;
+                //if command contains a network protocol try to retrieve protocols.
+                case CommandConstants.NETWORK_PROTOCOL_OPTION:
+                    if (subArgs.Length > 1)
+                    {
+                        string protocolInput = subArgs[1].ToLowerInvariant(); 
+                        int protocolId = _networkProtocolService.GetNetworkProtocolIdByName(protocolInput);
+
+                        if (protocolId != -1)
+                        {
+                            var protocolList = await _apiService.GetAllServerByProtocolListAsync(protocolId);
+                            ProcessAndSaveServerList(protocolList);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Error: Protocol '{protocolInput}' is not supported.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error: Please specify a valid protocol. e.g. --protocol udp");
+                    }
+                    break;
+
+                //if there is no valid command then display message
+                default:
+                    Console.WriteLine($"Unknown command: {command}");
+                    ProcessNameAndDisplayHelper.ToolTipDisplay();
+                    break;
+            }
+        }
+
+        private void HandleConfigCommand(string[] subArgs)
+        {
+            if (subArgs.Length < 2)
+            {
+                Console.WriteLine("Error: 'config' command requires a setting name and a value.");
+                return;
+            }
+
+            for (int i = 0; i < subArgs.Length - 1; i += 2)
+            {
+                string rawName = subArgs[i];
+                string value = subArgs[i + 1];
+
+                string processedName = ProcessNameAndDisplayHelper.ProccessName(rawName);
+                _nordDataStoreService.StoreValue(processedName, value);
+                _nordDataStoreService.Log($"Changed {processedName} to {value}");
+            }
+        }
+
+        private void ProcessAndSaveServerList(string serverList)
+        {
+            _nordDataStoreService.StoreValue("serverlist", serverList, writeToConsole: false);
+            _nordDataStoreService.Log("Saved new server list: " + serverList);
+            DisplayList(serverList);
+        }
+      
+        private void DisplayList(string serverListString)
         {
             try
             {
-                var settings = Properties.Settings.Default;
-                settings[name] = value;
-                settings.Save();
-                if (writeToConsole)
+                var serverList = JsonConvert.DeserializeObject<List<ServerModel>>(serverListString);
+                if (serverList == null) return;
+
+                Console.WriteLine("Server list: ");
+                foreach (var server in serverList)
                 {
-                    Console.WriteLine("Changed " + name + " to " + value);
+                    Console.WriteLine($"Name: {server.Name}");
                 }
+                Console.WriteLine($"Total servers: {serverList.Count}");
             }
-            catch
+            catch (JsonException)
             {
-                Console.WriteLine("Error: Couldn't save " + name + ". Check if command was input correctly.");
+                Console.WriteLine("Error: Local server list data is corrupted.");
             }
-
         }
-
-        static void DisplayList(string serverListString)
-        {
-            var serverlist = JsonConvert.DeserializeObject<List<ServerModel>>(serverListString);
-            Console.WriteLine("Server list: ");
-            for (var index = 0; index < serverlist.Count; index++)
-            {
-                Console.WriteLine("Name: " + serverlist[index].Name);
-            }
-            Console.WriteLine("Total servers: " + serverlist.Count);
-        }
-
-        static void Log(string action)
-        {
-            var newLog = new LogModel
-            {
-                Action = action,
-                Time = DateTime.Now
-            };
-            List<LogModel> currentLog;
-            if (!string.IsNullOrEmpty(Properties.Settings.Default.log))
-            {
-                currentLog = JsonConvert.DeserializeObject<List<LogModel>>(Properties.Settings.Default.log);
-                currentLog.Add(newLog);
-            }
-            else
-            {
-                currentLog = new List<LogModel> { newLog };
-            }
-
-            StoreValue("log", JsonConvert.SerializeObject(currentLog), false);
-        }
-
     }
 }

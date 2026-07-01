@@ -1,13 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using NordVPNModels.Models;
-using partycli.BusinnessLogic;
+using partycli.BusinessLogic;
 using partycli.Interfaces;
 using partycli.Services;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 
 namespace partycli
 {
@@ -27,6 +22,8 @@ namespace partycli
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
+
+            Console.Read();
         }
 
         private static IServiceProvider ConfigureServices()
@@ -34,6 +31,9 @@ namespace partycli
             var services = new ServiceCollection();
 
             services.AddTransient<INordApiService, NordApiService>();
+            services.AddTransient<ICountryService, CountryService>();
+            services.AddTransient<INetworkProtocolService, NetworkProtocolService>();
+            services.AddTransient<INordDataStoreService, NordDataStoreService>();
 
             services.AddTransient<NordVpnBusinessLogic>();
 

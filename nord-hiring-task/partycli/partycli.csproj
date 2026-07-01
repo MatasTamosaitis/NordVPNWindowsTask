@@ -68,7 +68,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BusinessLogic\NordVpnBusinessLogic.cs" />
-    <Compile Include="Helpers\NordVpnHelper.cs" />
+    <Compile Include="Helpers\ProcessNameAndDisplayHelper.cs" />
+    <Compile Include="Interfaces\ICountryService.cs" />
+    <Compile Include="Interfaces\INetworkProtocolService.cs" />
     <Compile Include="Interfaces\INordApiService.cs" />
     <Compile Include="Interfaces\INordDataStoreService.cs" />
     <Compile Include="Program.cs" />
@@ -78,6 +80,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Services\CountryService.cs" />
+    <Compile Include="Services\NetworkProtocolService.cs" />
     <Compile Include="Services\NordApiService.cs" />
     <Compile Include="Services\NordDataStoreService.cs" />
   </ItemGroup>

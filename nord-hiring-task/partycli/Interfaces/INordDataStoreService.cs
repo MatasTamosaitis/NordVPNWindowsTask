@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace partycli.Interfaces
 {
     public interface INordDataStoreService
     {
+        void StoreValue(string name, string value, bool writeToConsole = true);
+        void Log(string action);
     }
 }
