@@ -86,7 +86,7 @@ namespace partycli.BusinessLogic
 
                         int countryId = _countryService.GetCountryIdByName(countryInput);
 
-                        if (countryId != -1) 
+                        if (countryId != 0) 
                         {
                             var countryList = await _apiService.GetAllServerByCountryListAsync(countryId);
                             ProcessAndSaveServerList(countryList);
@@ -108,7 +108,7 @@ namespace partycli.BusinessLogic
                         string protocolInput = subArgs[1].ToLowerInvariant(); 
                         int protocolId = _networkProtocolService.GetNetworkProtocolIdByName(protocolInput);
 
-                        if (protocolId != -1)
+                        if (protocolId != 0)
                         {
                             var protocolList = await _apiService.GetAllServerByProtocolListAsync(protocolId);
                             ProcessAndSaveServerList(protocolList);
@@ -174,7 +174,7 @@ namespace partycli.BusinessLogic
             }
             catch (JsonException)
             {
-                Console.WriteLine("Error: Local server list data is corrupted.");
+                Console.WriteLine("Local server list is busted.");
             }
         }
     }

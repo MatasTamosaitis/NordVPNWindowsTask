@@ -30,7 +30,8 @@ namespace partycli
         {
             var services = new ServiceCollection();
 
-            services.AddTransient<INordApiService, NordApiService>();
+            services.AddHttpClient<INordApiService, NordApiService>();
+
             services.AddTransient<ICountryService, CountryService>();
             services.AddTransient<INetworkProtocolService, NetworkProtocolService>();
             services.AddTransient<INordDataStoreService, NordDataStoreService>();
