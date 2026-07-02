@@ -1,5 +1,6 @@
 ﻿using NordVPNModels.Models;
 using partycli.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,9 +11,15 @@ namespace partycli.Services
     {
         public int GetNetworkProtocolIdByName(string protocolName)
         {
-            var protocol = _networkProtocol.Where(x => x.NetworkProtocolName == protocolName).First();
+            if (string.IsNullOrWhiteSpace(protocolName))
+            {
+                return -1;
+            }
 
-            return protocol.NetworkProtocolId;
+            var protocol = _networkProtocol.FirstOrDefault(x =>
+                x.NetworkProtocolName.Equals(protocolName, StringComparison.OrdinalIgnoreCase));
+
+            return protocol != null ? protocol.NetworkProtocolId : -1;
         }
 
         #region

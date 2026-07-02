@@ -23,7 +23,7 @@ namespace partycli.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: Couldn't save {name}. Details: {ex.Message}");
+                Console.WriteLine($"Error: Couldn't save {name}, Check if command was input correctly. Details: {ex.Message}");
             }
         }
 

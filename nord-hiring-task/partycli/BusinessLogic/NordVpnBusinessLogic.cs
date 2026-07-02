@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.CommandLine;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NordVPNModels.Constants;
@@ -17,7 +17,11 @@ namespace partycli.BusinessLogic
         private readonly ICountryService _countryService;
         private readonly INordDataStoreService _nordDataStoreService;
 
-        public NordVpnBusinessLogic(INordApiService apiService, INetworkProtocolService networkProtocolService, ICountryService countryService, INordDataStoreService nordDataStoreService)
+        public NordVpnBusinessLogic(
+            INordApiService apiService,
+            INetworkProtocolService networkProtocolService,
+            ICountryService countryService,
+            INordDataStoreService nordDataStoreService)
         {
             _apiService = apiService;
             _networkProtocolService = networkProtocolService;
@@ -27,137 +31,108 @@ namespace partycli.BusinessLogic
 
         public async Task HandleCommandAsync(string[] args)
         {
+            var rootCommand = new RootCommand("PartyCLI - Nord Server Management Tool");
+
+            var serverListCommand = new Command(CommandConstants.SERVER_LIST, "Retrieves and displays available servers.");
+
+            var localOption = new Option<bool>(CommandConstants.LOCAL_OPTION)
+            {
+                Description = "View server data from local storage."
+            };
+
+            var countryOption = new Option<string>(CommandConstants.COUNTRY_OPTION)
+            {
+                Description = "Filter servers by country name."
+            };
+
+            var protocolOption = new Option<string>(CommandConstants.NETWORK_PROTOCOL_OPTION)
+            {
+                Description = "Filter servers by network protocol UDP/TCP/NordLynx."
+            };
+
+            serverListCommand.Add(localOption);
+            serverListCommand.Add(countryOption);
+            serverListCommand.Add(protocolOption);
+
+            serverListCommand.SetAction((parseResult) =>
+            {
+                bool localValue = parseResult.GetValue(localOption);
+                string countryValue = parseResult.GetValue(countryOption);
+                string protocolValue = parseResult.GetValue(protocolOption);
+
+                HandleServerListExecutionAsync(localValue, countryValue, protocolValue).GetAwaiter().GetResult();
+            });
+
+            rootCommand.Add(serverListCommand);
+
             if (args == null || args.Length == 0)
             {
                 ProcessNameAndDisplayHelper.ToolTipDisplay();
                 return;
             }
 
-            string command = args[0].ToLowerInvariant();
-
-            switch (command)
-            {
-                case CommandConstants.SERVER_LIST:
-                    await HandleServerListCommandAsync(args.Skip(1).ToArray());
-                    break;
-
-                case CommandConstants.CONFIG:
-                    HandleConfigCommand(args.Skip(1).ToArray());
-                    break;
-
-                default:
-                    ProcessNameAndDisplayHelper.ToolTipDisplay();
-                    break;
-            }
-
-            Console.Read();
+            var parseResultOutput = rootCommand.Parse(args);
+            await parseResultOutput.InvokeAsync();
         }
 
-        private async Task HandleServerListCommandAsync(string[] subArgs)
+        private async Task HandleServerListExecutionAsync(bool local, string country, string protocol)
         {
-            // if no sub command selected then get all servers
-            if (subArgs.Length == 0)
+            if (local)
             {
-                var serverList = await _apiService.GetAllServersListAsync();
-                ProcessAndSaveServerList(serverList);
+                string localList = Properties.Settings.Default.serverlist;
+                if (!string.IsNullOrEmpty(localList))
+                {
+                    DisplayList(localList);
+                }
+                else
+                {
+                    Console.WriteLine("There is server data in local storage");
+                }
                 return;
             }
 
-            string command = subArgs[0].ToLowerInvariant();
-
-            switch (command)
+            if (!string.IsNullOrWhiteSpace(country))
             {
-                case CommandConstants.LOCAL_OPTION:
-                    string localList = Properties.Settings.Default.serverlist;
-                    if (!string.IsNullOrEmpty(localList))
-                    {
-                        DisplayList(localList);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error: There are no server data in local storage");
-                    }
-                    break;
-                //if command contains a country try to retrieve servers by country.
-                case CommandConstants.COUNTRY_OPTION:
-                    if (subArgs.Length > 1)
-                    {
-                        string countryInput = subArgs[1]; 
-
-                        int countryId = _countryService.GetCountryIdByName(countryInput);
-
-                        if (countryId != 0) 
-                        {
-                            var countryList = await _apiService.GetAllServerByCountryListAsync(countryId);
-                            ProcessAndSaveServerList(countryList);
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Error: Country '{countryInput}' is not supported.");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error: Please specify a valid country. e.g. --country albania");
-                    }
-                    break;
-                //if command contains a network protocol try to retrieve protocols.
-                case CommandConstants.NETWORK_PROTOCOL_OPTION:
-                    if (subArgs.Length > 1)
-                    {
-                        string protocolInput = subArgs[1].ToLowerInvariant(); 
-                        int protocolId = _networkProtocolService.GetNetworkProtocolIdByName(protocolInput);
-
-                        if (protocolId != 0)
-                        {
-                            var protocolList = await _apiService.GetAllServerByProtocolListAsync(protocolId);
-                            ProcessAndSaveServerList(protocolList);
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Error: Protocol '{protocolInput}' is not supported.");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error: Please specify a valid protocol. e.g. --protocol udp");
-                    }
-                    break;
-
-                //if there is no valid command then display message
-                default:
-                    Console.WriteLine($"Unknown command: {command}");
-                    ProcessNameAndDisplayHelper.ToolTipDisplay();
-                    break;
-            }
-        }
-
-        private void HandleConfigCommand(string[] subArgs)
-        {
-            if (subArgs.Length < 2)
-            {
-                Console.WriteLine("Error: 'config' command requires a setting name and a value.");
+                var countryId = _countryService.GetCountryIdByName(country);
+                if (countryId != -1)
+                {
+                    var countryList = await _apiService.GetAllServerByCountryListAsync(countryId);
+                    ProcessAndSaveServerList(countryList);
+                }
+                else
+                {
+                    Console.WriteLine($"Error: Country '{country}' is not found.");
+                }
                 return;
             }
 
-            for (int i = 0; i < subArgs.Length - 1; i += 2)
+            if (!string.IsNullOrWhiteSpace(protocol))
             {
-                string rawName = subArgs[i];
-                string value = subArgs[i + 1];
-
-                string processedName = ProcessNameAndDisplayHelper.ProccessName(rawName);
-                _nordDataStoreService.StoreValue(processedName, value);
-                _nordDataStoreService.Log($"Changed {processedName} to {value}");
+                int protocolId = _networkProtocolService.GetNetworkProtocolIdByName(protocol);
+                if (protocolId != -1)
+                {
+                    var protocolList = await _apiService.GetAllServerByProtocolListAsync(protocolId);
+                    ProcessAndSaveServerList(protocolList);
+                }
+                else
+                {
+                    Console.WriteLine($"Error: Protocol '{protocol}' is not found.");
+                }
+                return;
             }
+
+            var serverList = await _apiService.GetAllServersListAsync();
+            ProcessAndSaveServerList(serverList);
         }
 
         private void ProcessAndSaveServerList(string serverList)
         {
             _nordDataStoreService.StoreValue("serverlist", serverList, writeToConsole: false);
             _nordDataStoreService.Log("Saved new server list: " + serverList);
+
             DisplayList(serverList);
         }
-      
+
         private void DisplayList(string serverListString)
         {
             try

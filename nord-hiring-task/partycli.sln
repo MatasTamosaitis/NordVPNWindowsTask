@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NordVPNModels", "NordVPNMod
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "partycli.Tests", "partycli.Tests\partycli.Tests.csproj", "{835E28F5-ADC9-4D2B-AD5B-13956F7523C1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,9 +25,16 @@ Global
 		{089E940F-ABB2-4FDE-A4CE-44AEB8C9EE54}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{089E940F-ABB2-4FDE-A4CE-44AEB8C9EE54}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{089E940F-ABB2-4FDE-A4CE-44AEB8C9EE54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{835E28F5-ADC9-4D2B-AD5B-13956F7523C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{835E28F5-ADC9-4D2B-AD5B-13956F7523C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{835E28F5-ADC9-4D2B-AD5B-13956F7523C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{835E28F5-ADC9-4D2B-AD5B-13956F7523C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{835E28F5-ADC9-4D2B-AD5B-13956F7523C1} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {73338F4E-0A1F-445F-B7B5-291CF8190A23}

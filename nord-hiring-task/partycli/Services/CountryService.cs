@@ -10,9 +10,15 @@ namespace partycli.Services
     {
         public int GetCountryIdByName(string countryName)
         {
-            var country = _countries.Where(x => x.CountryName == countryName).First();
+            if (string.IsNullOrWhiteSpace(countryName))
+            {
+                return -1;
+            }
 
-            return country.CountryId;
+            var country = _countries.FirstOrDefault(x =>
+                x.CountryName.Equals(countryName, StringComparison.OrdinalIgnoreCase));
+
+            return country != null ? country.CountryId : -1;
         }
 
         #region
